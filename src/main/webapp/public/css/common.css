@@ -1,0 +1,11 @@
+body {
+    background-color: #c2c2d6;
+    margin: 0px 0px 0px 0px;
+    text-align: center;
+}
+.canvas-game-class {
+    border:1px solid #d3d3d3;
+}
+img {
+    display: none;
+}

@@ -7,13 +7,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet(urlPatterns="/servlet")
+@WebServlet(urlPatterns="/servlet") // TODO annotation or web.xml?
 public class MainServlet extends HttpServlet {
     //private static final long serialVersionUID = 1L;
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
         throws ServletException, IOException {
-        response.getWriter().append("Welcome to pikachu skate revived!\n");
+	response.setContentType("application/json");
+        response.getWriter().append("{\"msg\": \"Welcome to pikachu skate revived!\"}");
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
