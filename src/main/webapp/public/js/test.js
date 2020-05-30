@@ -1,18 +1,27 @@
 class Player {
     constructor(gameWidth, gameHeight) {
 	this.playerWidth = 50;
+	this.playerHeight = 60;
 	this.xSpeedIncr = 0.11;
 	this.xSpeedMax = 0.6;
 	this.SpeedDecay = 0.025;
 	let img = document.getElementById("img1");
 	img.width = this.playerWidth;
-	this.playerHeight = img.height;
+	img.height = this.playerHeight;
 	this.paintPosX = gameWidth/2.0 - this.playerWidth/2.0;
 	this.paintPosY = gameHeight - this.playerHeight;
 	let context = main.context;
 	context.drawImage(img, this.paintPosX, this.paintPosY, this.playerWidth, this.playerHeight);
     }
+}
 
+abstract class FloatyObject {
+    constructor(nodes, id) {
+	this.nodes = nodes; // number of nodes
+	this.id = id;
+	this.polyX = [-0.5, -0.5, 0.5, 0.5];
+	this.polyY = [0, 1, 1, 0];
+    }
 }
 
 class mainApp {
