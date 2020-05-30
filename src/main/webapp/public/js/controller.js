@@ -12,7 +12,7 @@ const Controller = function() {
 	    case 37:
 		this.left.getInput(down);
 		break;
-	    case 38:
+	    case 32: // space bar
 		this.up.getInput(down);
 		break;
 	    case 39:

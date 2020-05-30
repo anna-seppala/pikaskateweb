@@ -5,6 +5,10 @@ const Game = function(width_in, height_in) {
 	background_color : "#005580",
 	friction : 0.9,
 	gravity : 3,
+	horizon_y : height_in/2 + 14, // a bit lower than centre
+	ground_polyg_y : [height_in/2+14, height_in/2+14, height_in,height_in],
+	ground_polyg_x : [0, width_in, width_in, 0],
+	max_tilt : Math.PI/6, // 30 deg
 	width : width_in,
 	height : height_in,
 	player : new Game.Player(width_in, height_in),
@@ -26,6 +30,12 @@ const Game = function(width_in, height_in) {
 	    }
 
 	    this.collideObject(this.player); // ??
+	    let angle = this.max_tilt * this.player.velocity_x;
+	    let tan = Math.tan(angle);
+	    this.ground_polyg_x[0] = 0;
+	    this.ground_polyg_y[0] = Math.round(tan*this.width/2) + this.horizon_y;
+	    this.ground_polyg_x[1] = this.width;
+	    this.ground_polyg_y[1] = Math.round(-tan*this.width/2) + this.horizon_y;
 	}
     };
 
@@ -41,6 +51,8 @@ Game.prototype = {
 };
 
 Game.Player = function(world_width, world_height) {
+    this.max_velocity_x = 0.6;
+    this.incr_velocity_x = 0.11;
     this.width = 50;
     this.height = 60;
     this.velocity_x = 0;
@@ -60,10 +72,16 @@ Game.Player.prototype = {
 	}
     },
     moveLeft : function() {
-	this.velocity_x -=0.5;
+	this.velocity_x -=this.incr_velocity_x;
+	if (this.velocity_x <= -this.max_velocity_x) {
+	    this.velocity_x = -this.max_velocity_x;
+	}
     },
     moveRight : function() {
-	this.velocity_x +=0.5;
+	this.velocity_x += this.incr_velocity_x;
+	if (this.velocity_x >= this.max_velocity_x) {
+	    this.velocity_x = this.max_velocity_x;
+	}
     },
     update : function() {
 	//this.x += this.velocity_x;

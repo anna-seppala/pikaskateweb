@@ -24,7 +24,8 @@ window.addEventListener("load", function(event) {
 
     // paint game on canvas
     let render = function() {
-	display.fill(game.world.background_color); // clear background
+	display.fill(game.world.background_color, game.world.ground_polyg_x,
+	    game.world.ground_polyg_y); // repaint background
 	display.drawPlayer(game.world.player.x, game.world.player.y,
 	    game.world.player.width, game.world.player.height,
 	    game.world.player.color);
