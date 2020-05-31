@@ -1,5 +1,7 @@
 /* fixed time-step game loop*/
 
+"use strict"; // improved (stricter) javascript writing
+
 const Engine = function(time_step, update, render) {
     this.accumulated_time = 0; // amount of time since last update
     this.animation_frame_request = undefined;

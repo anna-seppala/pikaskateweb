@@ -26,6 +26,12 @@ window.addEventListener("load", function(event) {
     let render = function() {
 	display.fill(game.world.background_color, game.world.ground_polyg_x,
 	    game.world.ground_polyg_y); // repaint background
+	for (let i=0; i<game.world.objects.length; i++) {
+	    if (game.world.objects[i].isActive()) {
+		display.drawObject(game.world.objects[i].x_scaled,
+		    game.world.objects[i].y_scaled,game.world.objects[i].colors);
+	    }
+	}
 	display.drawPlayer(game.world.player.x, game.world.player.y,
 	    game.world.player.width, game.world.player.height,
 	    game.world.player.color);

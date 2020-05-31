@@ -1,5 +1,7 @@
 /* Display handles drawing to buffer and displaying on screen */
 
+"use strict"; // improved (stricter) javascript writing
+
 const Display = function(canvas) {
     this.buffer = document.createElement("canvas").getContext("2d");
     this.context = canvas.getContext("2d");
@@ -8,6 +10,19 @@ const Display = function(canvas) {
 	this.buffer.fillStyle = color;
 	this.buffer.fillRect(Math.round(x), Math.round(y), width, height);
     };
+
+    this.drawObject = function(x,y, colors) {
+	for (let i=0; i<x.length; i++) {
+	    this.buffer.fillStyle = colors[i];
+	    this.buffer.beginPath();
+	    this.buffer.moveTo(x[i][0], y[i][0]);
+	    for (let j=1; j<x[i].length; j++) {
+		this.buffer.lineTo(x[i][j],y[i][j]);
+	    }
+	    this.buffer.closePath();
+	    this.buffer.fill();
+	}
+    }
 
     this.fill = function(color, ground_polyg_x, ground_polyg_y) {
 	this.buffer.fillStyle = color;

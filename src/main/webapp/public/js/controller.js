@@ -1,4 +1,5 @@
 /* Controller combines MVC components */
+"use strict"; // improved (stricter) javascript writing
 
 const Controller = function() {
     this.down = new Controller.ButtonInput();
