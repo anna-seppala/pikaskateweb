@@ -26,11 +26,12 @@ window.addEventListener("load", function(event) {
     let render = function() {
 	display.fill(game.world.background_color, game.world.ground_polyg_x,
 	    game.world.ground_polyg_y); // repaint background
-	for (let i=0; i<game.world.objects.length; i++) {
-	    if (game.world.objects[i].isActive()) {
-		display.drawObject(game.world.objects[i].x_scaled,
-		    game.world.objects[i].y_scaled,game.world.objects[i].colors);
+	let obj = game.world.objects.getHead();
+	while (obj !== null) {
+	    if (obj.isActive()) {
+		display.drawObject(obj.x_scaled,obj.y_scaled,obj.colors);
 	    }
+	    obj = obj.next;
 	}
 	display.drawPlayer(game.world.player.x, game.world.player.y,
 	    game.world.player.width, game.world.player.height,
@@ -40,13 +41,16 @@ window.addEventListener("load", function(event) {
 
     // update game logic
     let update = function() {
-	if (controller.left.active) {
+	if (controller.left.down) {
 	    game.world.player.moveLeft();
 	    controller.left.active = false;
-	} else if (controller.right.active) {
+	} else if (controller.right.down) {
 	    game.world.player.moveRight();
 	    controller.right.active = false;
-	} else if (controller.up.active) {
+	} else if (!controller.left.down && !controller.right.down) {
+	    game.world.player.moveStraight();
+	}
+	if (controller.up.active) {
 	    game.world.player.jump();
 	    controller.up.active = false;
 	}

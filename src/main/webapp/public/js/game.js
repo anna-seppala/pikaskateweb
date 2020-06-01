@@ -14,9 +14,8 @@ const Game = function(width_in, height_in) {
 	width : width_in,
 	height : height_in,
 	player : new Game.Player(width_in, height_in),
-	objects : [ new Game.Obstacle(), new Game.Obstacle(),
-	    new Game.Obstacle(), new Game.Obstacle(),
-	    new Game.Obstacle(), new Game.Obstacle() ],
+	objects : null,
+	max_objects : 10,
 	max_obstacles : 6,
 	total_obstacles : 0,
 	obstacle_creation_delay : 6,
@@ -24,11 +23,16 @@ const Game = function(width_in, height_in) {
 	collideObject : function(object) {
 	    // needed or not??
 	},
+	init : function() {
+	    this.objects = new Game.ObjectList();
+	    this.objects.init(this.max_objects, this.player);
+	    console.log("init world");
+	},
 	update : function() {
 	    this.player.velocity_y += this.gravity;
 	    this.player.update();
 
-	    this.player.velocity_x *= this.friction;
+	    //this.player.velocity_x *= this.friction;
 	    this.player.velocity_y *= this.friction;
 	    if (this.player.y >= this.height - this.player.height) {
 		this.player.y = this.height - this.player.height;
@@ -43,7 +47,7 @@ const Game = function(width_in, height_in) {
 	    this.updateObjects();
 	    this.collideObject(this.player); // ??
 	    // if player moving left/right, tilt horizon:
-	    let angle = this.player.velocity_x*Math.PI/180;
+	    let angle = this.player.velocity_x/6*Math.PI/180;
 	    let tan = Math.tan(angle);
 	    this.ground_polyg_x[0] = 0;
 	    this.ground_polyg_y[0] = Math.round(tan*this.width/2) + this.horizon_y;
@@ -52,43 +56,41 @@ const Game = function(width_in, height_in) {
 	},
         updateObjects : function() {
 	    let collision = false;
-	    let angle = this.player.velocity_x*Math.PI/180; // vel to radians
+	    let angle = this.player.velocity_x/6*Math.PI/180; // vel to radians
 	    let tan = Math.tan(angle);
 	    this.obstacle_creation_counter++;
-	    for (let i=0; i<this.objects.length; i++) {
-		if (this.objects[i].isActive()) {
-		    this.objects[i].z -= this.player.velocity_z;
+	    let obj = this.objects.getHead();
+	    while (obj !== null) {
+		if (obj.isActive()) {
+		    obj.z -= this.player.velocity_z;
 
 		    //TODO test collision here
 		    
 		    //if object moving out of sight -> remove
-		    if(this.objects[i].z <= 0.45) {
-			this.objects[i].deactivate();
+		    if(obj.z <= 0.45) {
+			obj.deactivate();
 			this.total_obstacles--;
 			continue;
 		    }
 
 		    // transform object by palyer's x/z movement
-		    for (let j=0; j<this.objects[i].x.length; j++) {
-			for (let k=0; k<this.objects[i].x[j].length; k++) {
-			    this.objects[i].x[j][k] -= this.player.velocity_x;
+		    for (let j=0; j<obj.x.length; j++) {
+			for (let k=0; k<obj.x[j].length; k++) {
+			    obj.x[j][k] -= this.player.velocity_x;
 			}
 		    }
 		    // if player moving left/right -> objects transformed
-		    this.objects[i].transform(angle, this.width/2, this.horizon_y);
+		    obj.transform(angle, this.width/2, this.horizon_y);
 		}
-
+		obj = obj.next;
 	    }
 	    // if not enough obstacles in scene -> add new one
 	    if (this.total_obstacles < this.max_obstacles &&
 		this.obstacle_creation_counter > this.obstacle_creation_delay) {
 		this.obstacle_creation_counter = 0;
-		for (let i=0; i<this.objects.length; i++) {
-		    if (!this.objects[i].isActive()) {
-			this.objects[i].init(Math.round((Math.random()-0.5)*5000),this.horizon_z);
-			this.total_obstacles++;
-			break;
-		    }
+		if (this.objects.activateObject(Math.round((Math.random()-0.5)*5000)
+		    ,this.horizon_z)) {
+		    this.total_obstacles++;
 		}
 	    }
 	}
@@ -98,16 +100,18 @@ const Game = function(width_in, height_in) {
 	this.world.update();
     };
 
-};
+    this.world.init();
 
+};
 
 Game.prototype = {
     constructor : Game
 };
 
+
 Game.Player = function(world_width, world_height) {
-    this.max_velocity_x = 30;
-    this.incr_velocity_x = 5;
+    this.max_velocity_x = 100;
+    this.incr_velocity_x = 25;
     this.width = 50;
     this.height = 60;
     this.velocity_x = 0;
@@ -124,7 +128,7 @@ Game.Player.prototype = {
     jump : function() {
 	if (!this.jumping) {
 	    this.jumping = true;
-	    this.velocity_y -=20;
+	    this.velocity_y -=50;
 	}
     },
     moveLeft : function() {
@@ -139,13 +143,95 @@ Game.Player.prototype = {
 	    this.velocity_x = this.max_velocity_x;
 	}
     },
+    moveStraight : function() {
+	if (this.velocity_x > 0) {
+	    this.velocity_x -= this.incr_velocity_x/2;
+	    if (this.velocity_x < 0 ) {
+		this.velocity_x = 0;
+	    }
+	} else if (this.velocity_x < 0) {
+	    this.velocity_x += this.incr_velocity_x/2;
+	    if (this.velocity_x > 0) {
+		this.velocity_x = 0;
+	    }
+	}
+    },
     update : function() {
 	//this.x += this.velocity_x;
 	this.y += this.velocity_y;
     }
 };
 
+
+Game.ObjectList = function() {
+    this.head = null;
+    this.tail = null;
+};
+
+Game.ObjectList.prototype = {
+    constructor : Game.ObjectList,
+    init : function(total_objects, player) {
+	let obj = null;
+	for (let i=0; i<total_objects; i++) {
+	    if (i%10 == 0) { // every 10th obj is heart
+		obj = new Game.Obstacle();
+		//obj = new Heart();
+	    } else {
+		obj = new Game.Obstacle();
+	    }
+	    if (i==0) {
+		this.tail = obj;
+	    }
+	    obj.next = this.head;
+	    if (this.head !== null) {
+		this.head.prev = obj;
+	    }
+	    this.head = obj;
+	}
+    },
+    getHead : function() {
+	return this.head;
+    },
+    getTail : function() {
+	return this.tail;
+    },
+    deactivateAll : function() {
+	obj = this.head;
+	while (obj !== null) {
+	    obj.deactivate();
+	    obj = obj.next;
+	}
+    },
+    activateObject : function(x,z) {
+	let obj = this.head;
+	while (obj !== null) {
+	    if (!obj.isActive()) {
+		obj.init(x,z);
+		if (obj != this.head) { //only move if not head
+		    obj.prev.next = obj.next;
+		    if (obj != this.tail) { // next is null if tail
+			obj.next.prev = obj.prev;
+		    } else { // if movin tail, update this.tail
+			this.tail = obj.prev;
+		    }
+		    obj.next = this.head;
+		    this.head.prev = obj;
+		    this.head = obj;
+		    this.head.prev = null;
+		}
+		return obj.isActive();
+	    }
+	    obj = obj.next;
+	}
+	return false;
+    }
+};
+
+
+
 Game.FloatyObject = function(colors,x,y) {
+    this.next = null;
+    this.prev = null;
     this.collided = false;
     this.active = false;
     this.colors = colors;
@@ -209,8 +295,8 @@ Game.FloatyObject.prototype = {
 
 Game.Obstacle = function() { 
     let colors = ["rgb(71,214,158)", "rgb(9,128,86)", "rgb(8,76,9)"];
-    let x = [ [-50,50,50,-50] ];
-    let y = [ [-50,-50,150,150] ];
+    let x = [ [-125,125,125,-125] ];
+    let y = [ [-100,-100,350,350] ];
     Game.FloatyObject.call(this,colors, x,y);
 }
 

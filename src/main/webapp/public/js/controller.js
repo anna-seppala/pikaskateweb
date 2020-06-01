@@ -41,5 +41,6 @@ Controller.ButtonInput.prototype = {
 	if (this.down != down) {
 	    this.active = down;
 	}
+	this.down = down;
     }
 };
