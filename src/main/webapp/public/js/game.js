@@ -59,6 +59,16 @@ const Game = function(width_in, height_in) {
 	    let angle = this.player.velocity_x/6*Math.PI/180; // vel to radians
 	    let tan = Math.tan(angle);
 	    this.obstacle_creation_counter++;
+	    // if not enough obstacles in scene -> add new one
+	    if (this.total_obstacles < this.max_obstacles &&
+		this.obstacle_creation_counter > this.obstacle_creation_delay) {
+		this.obstacle_creation_counter = 0;
+		if (this.objects.activateObject(Math.round((Math.random()-0.5)*5000)
+		    ,this.horizon_z)) {
+		    this.total_obstacles++;
+		}
+	    }
+
 	    let obj = this.objects.getHead();
 	    while (obj !== null) {
 		if ((obj.type != "Player") && obj.isActive()) {
@@ -88,9 +98,8 @@ const Game = function(width_in, height_in) {
 			obj.front = true;
 		    }
 
-		    
 		    //if object moving out of sight -> remove
-		    if(obj.z <= 0.45 && obj.isActive()) {
+		    if(obj.z <= 1.1 && obj.isActive()) {
 			obj.deactivate();
 			this.total_obstacles--;
 			continue;
@@ -107,15 +116,7 @@ const Game = function(width_in, height_in) {
 		}
 		obj = obj.next;
 	    }
-	    // if not enough obstacles in scene -> add new one
-	    if (this.total_obstacles < this.max_obstacles &&
-		this.obstacle_creation_counter > this.obstacle_creation_delay) {
-		this.obstacle_creation_counter = 0;
-		if (this.objects.activateObject(Math.round((Math.random()-0.5)*5000)
-		    ,this.horizon_z)) {
-		    this.total_obstacles++;
-		}
-	    }
+
 	}
     };
 
@@ -320,7 +321,7 @@ Game.FloatyObject.prototype = {
 	return this.active;
     },
     isCollision : function() {
-	return false; //TODO: cretae this func
+	return false; //TODO: create this func
     },
     deactivate : function() {
 	this.active = false;
