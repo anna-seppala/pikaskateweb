@@ -15,7 +15,7 @@ const Game = function(width_in, height_in) {
 	height : height_in,
 	player : new Game.Player(width_in, height_in),
 	objects : null,
-	max_objects : 10,
+	max_objects : 3,
 	max_obstacles : 6,
 	total_obstacles : 0,
 	obstacle_creation_delay : 6,
@@ -34,12 +34,12 @@ const Game = function(width_in, height_in) {
 
 	    //this.player.velocity_x *= this.friction;
 	    this.player.velocity_y *= this.friction;
-	    if (this.player.y >= this.height - this.player.height) {
-		this.player.y = this.height - this.player.height;
+	    if (this.player.y >= this.height - this.player.height*1.5) {
+		this.player.y = this.height - this.player.height*1.5;
 		this.player.velocity_y = 0;
 	    }
 	    // jumping stops when player sinks to orig pos
-	    if (this.player.y >= this.height - this.player.height &&
+	    if (this.player.y >= this.height - this.player.height*1.5 &&
 		this.player.velocity_y >= 0) {
 		this.player.jumping = false;
 	    }
@@ -61,13 +61,36 @@ const Game = function(width_in, height_in) {
 	    this.obstacle_creation_counter++;
 	    let obj = this.objects.getHead();
 	    while (obj !== null) {
-		if (obj.isActive()) {
+		if ((obj.type != "Player") && obj.isActive()) {
 		    obj.z -= this.player.velocity_z;
+		    if (obj.z < 0) {
+			obj.z = 0;
+		    }
 
 		    //TODO test collision here
+
+		    if(obj.z <= this.player.z && obj.isActive()
+			&& !obj.atFront()) { // set obj behind player
+			if (obj !== this.objects.getHead()) {
+			    obj.prev.next = obj.next;
+			} else {
+			    this.objects.head = obj.next;
+			}
+			obj.next.prev = obj.prev;
+			obj.next = this.player.next;
+			obj.prev = this.player;
+			this.player.next = obj;
+			if (obj.next !== null) {
+			    obj.next.prev = obj;
+			} else {
+			    this.objects.tail = obj;
+			}
+			obj.front = true;
+		    }
+
 		    
 		    //if object moving out of sight -> remove
-		    if(obj.z <= 0.45) {
+		    if(obj.z <= 0.45 && obj.isActive()) {
 			obj.deactivate();
 			this.total_obstacles--;
 			continue;
@@ -110,6 +133,9 @@ Game.prototype = {
 
 
 Game.Player = function(world_width, world_height) {
+    this.type = "Player"; // type, next and prev -> add player into object list
+    this.prev = null;
+    this.next = null;
     this.max_velocity_x = 100;
     this.incr_velocity_x = 25;
     this.width = 50;
@@ -118,7 +144,8 @@ Game.Player = function(world_width, world_height) {
     this.velocity_y = 0;
     this.velocity_z = 1; // constant forwards velocity
     this.x = world_width/2 - this.width/2;
-    this.y = world_height - this.height;
+    this.y = world_height - this.height*1.5;
+    this.z = 2.1;
     this.color = "#ff0000"; // temporary
     this.jumping = false;
 };
@@ -171,18 +198,23 @@ Game.ObjectList = function() {
 Game.ObjectList.prototype = {
     constructor : Game.ObjectList,
     init : function(total_objects, player) {
+	this.tail = player;
 	let obj = null;
 	for (let i=0; i<total_objects; i++) {
 	    if (i%10 == 0) { // every 10th obj is heart
 		obj = new Game.Obstacle();
+		obj.type = "Heart";
 		//obj = new Heart();
 	    } else {
 		obj = new Game.Obstacle();
+		obj.type = "Obstacle";
 	    }
 	    if (i==0) {
-		this.tail = obj;
+		player.prev = obj;
+		obj.next = player;
+	    } else {
+		obj.next = this.head;
 	    }
-	    obj.next = this.head;
 	    if (this.head !== null) {
 		this.head.prev = obj;
 	    }
@@ -205,13 +237,13 @@ Game.ObjectList.prototype = {
     activateObject : function(x,z) {
 	let obj = this.head;
 	while (obj !== null) {
-	    if (!obj.isActive()) {
+	    if ((obj.type != "Player") && !obj.isActive()) {
 		obj.init(x,z);
 		if (obj != this.head) { //only move if not head
 		    obj.prev.next = obj.next;
-		    if (obj != this.tail) { // next is null if tail
+		    if (obj !== this.tail) { // next is null if tail
 			obj.next.prev = obj.prev;
-		    } else { // if movin tail, update this.tail
+		    } else { // if moving tail, update this.tail
 			this.tail = obj.prev;
 		    }
 		    obj.next = this.head;
@@ -230,8 +262,10 @@ Game.ObjectList.prototype = {
 
 
 Game.FloatyObject = function(colors,x,y) {
+    this.type = ""; // workaround to identify objects
     this.next = null;
     this.prev = null;
+    this.front = false;
     this.collided = false;
     this.active = false;
     this.colors = colors;
@@ -290,13 +324,17 @@ Game.FloatyObject.prototype = {
     },
     deactivate : function() {
 	this.active = false;
+	this.front = false;
+    },
+    atFront : function() {
+	return this.front;
     }
 }
 
 Game.Obstacle = function() { 
     let colors = ["rgb(71,214,158)", "rgb(9,128,86)", "rgb(8,76,9)"];
     let x = [ [-125,125,125,-125] ];
-    let y = [ [-100,-100,350,350] ];
+    let y = [ [-100,-100,420,420] ];
     Game.FloatyObject.call(this,colors, x,y);
 }
 

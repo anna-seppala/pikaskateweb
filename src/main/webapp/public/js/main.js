@@ -28,14 +28,15 @@ window.addEventListener("load", function(event) {
 	    game.world.ground_polyg_y); // repaint background
 	let obj = game.world.objects.getHead();
 	while (obj !== null) {
-	    if (obj.isActive()) {
+	    if (obj.type == "Player") {
+		display.drawPlayer(game.world.player.x, game.world.player.y,
+		    game.world.player.width, game.world.player.height,
+		    game.world.player.color);
+	    } else if (obj.isActive()) {
 		display.drawObject(obj.x_scaled,obj.y_scaled,obj.colors);
 	    }
 	    obj = obj.next;
 	}
-	display.drawPlayer(game.world.player.x, game.world.player.y,
-	    game.world.player.width, game.world.player.height,
-	    game.world.player.color);
 	display.render();
     };
 
